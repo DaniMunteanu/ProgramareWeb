@@ -1,0 +1,21 @@
+{% extends 'home.html' %}
+
+{% load static %}
+{% block content %}
+
+    <div class="row">
+        {% for sticker in stickers %}
+        <div class="col-lg-4">
+            <img class="thumbnail" src={{ sticker.imageURL }}>
+            <div class="box-element product">
+                <h6><strong>{{ sticker.name }}</strong></h6>
+                <hr>
+                <button class="btn btn-outline-secondary add-btn">Add to cart</button>
+                <a class="btn btn-outline-success" href={% url 'sticker_detail' %}>View</a>
+                <h4 style="display: inline-block; float: right"><strong>{{ sticker.price|floatformat:2 }} Ron</strong></h4>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+{% endblock content %}
