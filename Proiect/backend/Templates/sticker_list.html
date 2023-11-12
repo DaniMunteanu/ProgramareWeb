@@ -1,0 +1,15 @@
+<html>
+    <body>
+        <h1>Stickers</h1>
+        <ul>
+            {% for sticker in stickers %}
+            <li>{{ sticker.name }}</li>
+            <li>{{ sticker.length }}</li>
+            <li>{{ sticker.height }}</li>
+            <li>{{ sticker.price }}</li>
+            <li>{{ sticker.image }}</li>
+                <a href="{% url 'sticker_delete' pk=sticker.pk %}" class="button-form">DELETE</a>
+            {% endfor %}
+        </ul>
+    </body>
+</html>

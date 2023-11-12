@@ -11,7 +11,7 @@
                 <h6><strong>{{ sticker.name }}</strong></h6>
                 <hr>
                 <button class="btn btn-outline-secondary add-btn">Add to cart</button>
-                <a class="btn btn-outline-success" href={% url 'sticker_detail' %}>View</a>
+                <a class="btn btn-outline-success" href={% url 'sticker_detail' pk=sticker.pk %}>View</a>
                 <h4 style="display: inline-block; float: right"><strong>{{ sticker.price|floatformat:2 }} Ron</strong></h4>
             </div>
         </div>

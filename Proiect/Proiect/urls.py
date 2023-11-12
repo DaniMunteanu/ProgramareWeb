@@ -18,11 +18,14 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path
 
-from backend.views import store_view, cart_view, sticker_detail, checkout_view
+from backend.views import *
 
 urlpatterns = [
     path('admin/', admin.site.urls, name='admin'),
-    path('stickers/', sticker_detail, name='sticker_detail'),
+    path('sticker_list/', StickerList.as_view(), name='sticker_list'),
+    path('stickers/<int:pk>', StickerDetail.as_view(), name='sticker_detail'),
+    path('sticker_delete/<int:pk>', StickerDelete.as_view(), name='sticker_delete'),
+    path('stickers/', StickerDetail.as_view()),
     path('', store_view, name='store'),
     path('cart/', cart_view, name='cart'),
     path('checkout/', checkout_view, name='checkout'),
