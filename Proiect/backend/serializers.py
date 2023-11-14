@@ -7,7 +7,8 @@ from backend.models import Sticker
   #      model = Sticker
    #     fields = ['name', 'length', 'height', 'price', 'image']
 
-class StickerSerializer(serializers.Serializer):
+class StickerSerializer(serializers.ModelSerializer):
+    '''
     name = serializers.CharField(max_length=200)
     length = serializers.FloatField()
     height = serializers.FloatField()
@@ -25,6 +26,7 @@ class StickerSerializer(serializers.Serializer):
         instance.image = validated_data.get('image', instance.image)
         instance.save()
         return instance
-    #class Meta:
-     #   model = Sticker
-      #  fields = ['name', 'length', 'height', 'price', 'image']
+    '''
+    class Meta:
+        model = Sticker
+        fields = ['name', 'length', 'height', 'price', 'image']

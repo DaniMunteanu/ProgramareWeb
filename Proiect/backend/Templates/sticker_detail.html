@@ -6,7 +6,7 @@
     </head>
 
     <body>
-    <form class="form-horizontal" action="{% url 'sticker_detail' pk=sticker.pk %}" method="post" novalidate>
+    <form class="form-horizontal" action="{% url 'sticker_detail' pk=sticker.id %}" method="post" novalidate enctype="multipart/form-data">
         <h1>Sticker - {{ sticker.name }}</h1>
             {% csrf_token %}
             {% render_form serializer template_pack='rest_framework/horizontal' %}

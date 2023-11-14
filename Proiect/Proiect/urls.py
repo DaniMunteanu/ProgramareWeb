@@ -22,13 +22,15 @@ from backend.views import *
 
 urlpatterns = [
     path('admin/', admin.site.urls, name='admin'),
+    path('sticker_create/', CreateSticker.as_view(), name='sticker_create'),
     path('sticker_list/', StickerList.as_view(), name='sticker_list'),
-    path('stickers/<int:pk>', StickerDetail.as_view(), name='sticker_detail'),
+    path('sticker_detail/<int:pk>', StickerDetail.as_view(), name='sticker_detail'),
     path('sticker_delete/<int:pk>', StickerDelete.as_view(), name='sticker_delete'),
-    path('stickers/', StickerDetail.as_view()),
     path('', store_view, name='store'),
+    path('register/', register, name='register'),
+    path('login/', login_user, name='login'),
+    path('logout/',logout_user, name='logout'),
     path('cart/', cart_view, name='cart'),
+    path('update_sticker/', updateSticker, name='update_sticker'),
     path('checkout/', checkout_view, name='checkout'),
-]
-
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

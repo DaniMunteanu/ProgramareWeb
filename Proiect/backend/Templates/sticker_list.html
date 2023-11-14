@@ -7,8 +7,9 @@
             <li>{{ sticker.length }}</li>
             <li>{{ sticker.height }}</li>
             <li>{{ sticker.price }}</li>
-            <li>{{ sticker.image }}</li>
-                <a href="{% url 'sticker_delete' pk=sticker.pk %}" class="button-form">DELETE</a>
+            <li><img src="{{ sticker.imageURL }}" width=300></li>
+                <a href="{% url 'sticker_delete' pk=sticker.id %}" class="button-form">DELETE</a>
+                <a href="{% url 'sticker_detail' pk=sticker.id %}" class="button-form">DETAILS</a>
             {% endfor %}
         </ul>
     </body>

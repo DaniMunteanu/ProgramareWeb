@@ -1,20 +1,24 @@
 from django.db import models
 from django.contrib.auth.models import User
+
+from Proiect import settings
+
+
 # Create your models here.
 
 class Customer(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=200, null=True)
     email = models.EmailField(max_length=200, null=True)
-
     def __str__(self):
         return self.name
 class Sticker(models.Model):
+    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=200, null=True)
     length = models.FloatField()
     height = models.FloatField()
     price = models.FloatField()
-    image = models.ImageField(null=True, blank=True)
+    image = models.ImageField(upload_to='images/', null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -24,7 +28,7 @@ class Sticker(models.Model):
         try:
             url = self.image.url
         except:
-            url = ''
+            url = 'images/placeholder.png'
         return url
 
 class Order(models.Model):
