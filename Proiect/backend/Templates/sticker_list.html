@@ -10,6 +10,7 @@
             <li><img src="{{ sticker.imageURL }}" width=300></li>
                 <a href="{% url 'sticker_delete' pk=sticker.id %}" class="button-form">DELETE</a>
                 <a href="{% url 'sticker_detail' pk=sticker.id %}" class="button-form">DETAILS</a>
+                <a href="{% url 'sticker_update' pk=sticker.id %}" class="button-form">UPDATE</a>
             {% endfor %}
         </ul>
     </body>

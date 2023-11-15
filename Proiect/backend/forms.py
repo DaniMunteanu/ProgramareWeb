@@ -3,7 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
-from backend.models import Sticker
+from backend.models import Sticker, Cart, CartSticker
 
 
 class StickerForm(forms.ModelForm):
@@ -15,7 +15,6 @@ class StickerForm(forms.ModelForm):
         fields = [
             'name', 'length', 'height', 'price', 'image'
         ]
-
 
 class CustomerForm(UserCreationForm):
     username = forms.CharField(label='username', min_length=5, max_length=150)
@@ -48,3 +47,27 @@ class CustomerForm(UserCreationForm):
         self.fields['password2'].label = ''
         self.fields[
             'password2'].help_text = '<span class="form-text text-muted"><small>Enter the same password as before, for verification.</small></span>'
+
+class CartForm(forms.ModelForm):
+    class Meta:
+        # specify model to be used
+        model = Cart
+
+        # specify fields to be used
+        fields = [
+            'user', 'stickers'
+        ]
+    stickers = forms.ModelMultipleChoiceField(
+        queryset=Sticker.objects.all(),
+        widget=forms.CheckboxSelectMultiple
+)
+
+class CartStickerForm(forms.ModelForm):
+    class Meta:
+        # specify model to be used
+        model = CartSticker
+
+        # specify fields to be used
+        fields = [
+            'cart', 'sticker'
+        ]

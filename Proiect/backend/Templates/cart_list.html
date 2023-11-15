@@ -1,0 +1,17 @@
+<html>
+    <body>
+        <h1>Carts</h1>
+        <ul>
+            {% for cart in carts %}
+            <li>{{ cart.user.username }}</li>
+            <li>{{ cart.user.email }}</li>
+                {% for sticker in cart.stickers.all %}
+                    <li>{{ sticker.name }}</li>
+                    <li><a href="{% url 'sticker_detail' pk=sticker.id %}" class="button-form">DETAILS</a></li>
+                {% endfor %}
+            <li><a href="{% url 'cart_delete' pk=cart.id %}" class="button-form">DELETE</a></li>
+            <li><a href="{% url 'cart_update' pk=cart.id %}" class="button-form">UPDATE</a></li>
+            {% endfor %}
+        </ul>
+    </body>
+</html>

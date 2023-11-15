@@ -10,7 +10,10 @@
             <div class="box-element product">
                 <h6><strong>{{ sticker.name }}</strong></h6>
                 <hr>
-                <button data-sticker="{{ sticker.id }}" data-action="add" class="btn btn-outline-secondary add-btn update-cart">Add to cart</button>
+                <form action="{% url 'add-to-cart' pk=sticker.id %}" method="post">
+                    {% csrf_token %}
+                    <button class="add-to-cart-btn">Add to cart</button>
+                </form>
                 <a class="btn btn-outline-success" href={% url 'sticker_detail' pk=sticker.id %}>View</a>
                 <h4 style="display: inline-block; float: right"><strong>{{ sticker.price|floatformat:2 }} Ron</strong></h4>
             </div>

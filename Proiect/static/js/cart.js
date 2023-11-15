@@ -1,43 +1,46 @@
-var updateBtns = document.getElementsByClassName('update-cart')
+increaseButtons.forEach((button, index) => {
+    button.addEventListener("click", (event) => {
+        event.preventDefault();
+        const currentSticker = event.target.closest(".cart-sticker");
+        const quantityElement = currentSticker.querySelector(".sticker-quantity");
+        const priceElement = currentSticker.querySelector(".cart-sticker-price");
+        const pricePerSticker = parseFloat(priceElement.getAttribute("data-price"));
+        const currentQuantity = parseInt(quantityElement.textContent);
 
-for(i=0; i<updateBtns.length; i++)
-{
-    updateBtns[i].addEventListener('click', function()
-    {
-        var stickerId = this.dataset.sticker
-        var action = this.dataset.action
-        console.log('stickerId:', stickerId, 'action:', action)
+        quantityElement.textContent = currentQuantity + 1;
+        updateCartItemPrice(priceElement, pricePerSticker, currentQuantity + 1);
+    });
+});
 
-        console.log('USER:', user)
-        if(user === 'AnonymousUser')
-            console.log('User is not authenticated')
-        else
-            updateUserOrder(stickerId, action)
-    }
-    )
+decreaseButtons.forEach((button, index) => {
+    button.addEventListener("click", (event) => {
+        event.preventDefault();
+        const currentSticker = event.target.closest(".cart-sticker");
+        const quantityElement = currentSticker.querySelector(".sticker-quantity");
+        const priceElement = currentSticker.querySelector(".cart-sticker-price");
+        const pricePerSticker = parseFloat(priceElement.getAttribute("data-price"));
+        const currentQuantity = parseInt(quantityElement.textContent);
+
+        if (currentQuantity > 1) {
+            quantityElement.textContent = currentQuantity - 1;
+            updateCartItemPrice(priceElement, pricePerSticker, currentQuantity - 1);
+        }
+    });
+});
+
+function updateCartItemPrice(priceElement, pricePerSticker, quantity) {
+    const totalPrice = (pricePerSticker * quantity).toFixed(2);
+    priceElement.textContent = "$" + totalPrice;
+}
+function updateCartCount() {
+    var cartCount = document.querySelector('.cart-count');
+    fetch("http://127.0.0.1:8000/fetch-cart-count/")
+        .then(response => response.json())
+        .then(data => {
+            cartCount.textContent = data.cart_count;
+        });
 }
 
-function updateUserOrder(stickerId, action){
-    console.log('User is authenticated, sending data...')
+updateCartCount();
 
-    var url = '/update_cart/'
 
-    fetch(url, {
-        method:'POST',
-        headers:{
-            'Content-Type':'application/json',
-            'X-CSRFToken':csrftoken,
-        },
-        body:JSON.stringify({'stickerId': stickerId, 'action': action})
-    })
-
-    .then((response) => {
-        return response.json()
-    })
-
-    .then((data) => {
-        console.log('data:', data)
-        location.reload()
-    })
-
-}

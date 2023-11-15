@@ -6,14 +6,6 @@ from Proiect import settings
 
 # Create your models here.
 
-'''
-class Customer(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
-    name = models.CharField(max_length=200, null=True)
-    email = models.EmailField(max_length=200, null=True)
-    def __str__(self):
-        return self.name
-'''
 class Sticker(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=200, null=True)
@@ -33,33 +25,20 @@ class Sticker(models.Model):
             url = 'images/placeholder.png'
         return url
 
-class Order(models.Model):
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    date = models.DateTimeField(auto_now_add=True)
-    complete = models.BooleanField(default=False, null=True, blank=False)
-    order_id = models.CharField(max_length=200, null=True)
+class CartSticker(models.Model):
+    cart = models.ForeignKey('Cart', on_delete=models.CASCADE)
+    sticker = models.ForeignKey(Sticker, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+
     def __str__(self):
-        return str(self.order_id)
+        return f"{self.quantity} x {self.sticker.name}"
+    def total(self):
+        return self.sticker.price * self.quantity
 
-    @property
-    def get_cart_total(self):
-        orderStickers = self.ordersticker_set.all()
-        total = sum([sticker.get_total for sticker in orderStickers])
-        return total
+class Cart(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    stickers = models.ManyToManyField(Sticker, through='CartSticker')
 
-    @property
-    def get_cart_stickers(self):
-        orderStickers = self.ordersticker_set.all()
-        total = sum([sticker.quantity for sticker in orderStickers])
-        return total
+    def __str__(self):
+        return f"Cart for {self.user.username}"
 
-class OrderSticker(models.Model):
-    sticker = models.ForeignKey(Sticker, on_delete=models.SET_NULL, blank=True, null=True)
-    order = models.ForeignKey(Order, on_delete=models.SET_NULL, blank=True, null=True)
-    quantity = models.IntegerField(default=0, null=True, blank=True)
-    date_added = models.DateTimeField(auto_now_add=True)
-
-    @property
-    def get_total(self):
-        total = self.sticker.price * self.quantity
-        return total

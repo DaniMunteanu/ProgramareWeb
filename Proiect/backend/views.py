@@ -1,6 +1,8 @@
 from django.contrib import messages
 from django.contrib.auth import logout, authenticate, login
 import json
+
+from django.contrib.auth.decorators import login_required
 from django.http import Http404, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from rest_framework import status
@@ -9,9 +11,10 @@ from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from backend.forms import StickerForm, CustomerForm
+from backend.forms import StickerForm, CustomerForm, CartForm, CartStickerForm
 from backend.models import *
-from backend.serializers import StickerSerializer
+from backend.serializers import StickerSerializer, CartSerializer
+
 
 # Create your views here.
 
@@ -37,6 +40,13 @@ class StickerList(APIView):
 class StickerDetail(APIView):
     renderer_classes = [TemplateHTMLRenderer]
     template_name = 'sticker_detail.html'
+    def get(self, request, pk):
+        sticker = get_object_or_404(Sticker, id=pk)
+        return Response({'sticker': sticker})
+
+class StickerUpdate(APIView):
+    renderer_classes = [TemplateHTMLRenderer]
+    template_name = 'sticker_update.html'
 
     def get(self, request, pk):
         sticker = get_object_or_404(Sticker, id=pk)
@@ -114,20 +124,11 @@ def logout_user(request):
     return redirect('store')
 
 def store_view(request):
-    if request.user.is_authenticated:
-        customer = request.user
-        order, created = Order.objects.get_or_create(user=customer, complete=False)
-        stickers = order.ordersticker_set.all()
-        cartStickers = order.get_cart_stickers
-    else:
-        stickers = []
-        order = {'get_cart_total': 0, 'get_cart_stickers': 0}
-        cartStickers = order['get_cart_items']
-
 
     stickers = Sticker.objects.all()
-    context = {'stickers': stickers, 'cartStickers': cartStickers}
+    context = {'stickers': stickers}
     return render(request, "store.html", context)
+
 
 def cart_view(request):
     if request.user.is_authenticated:
@@ -177,5 +178,171 @@ def update_cart(request):
         orderSticker.delete()
 
     return JsonResponse('Sticker was added', safe=False)
+
+
+@login_required(login_url='login')
+def add_to_cart(request, pk):
+    sticker = Sticker.objects.get(pk=pk)
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_sticker, sticker_created = CartSticker.objects.get_or_create(cart=cart, sticker=sticker)
+
+    if not sticker_created:
+        cart_sticker.quantity += 1
+        cart_sticker.save()
+
+    return redirect('store')
+
+@login_required(login_url='login')
+def remove_from_cart(request, pk):
+    sticker = Sticker.objects.get(pk=pk)
+    cart = Cart.objects.get(user=request.user)
+    try:
+        cart_sticker = cart.cartsticker_set.get(sticker=sticker)
+        if cart_sticker.quantity >= 1:
+            cart_sticker.delete()
+    except CartSticker.DoesNotExist:
+        pass
+
+    return redirect('cart')
+
+@login_required(login_url='login')
+def view_cart(request):
+    cart = request.user.cart
+    cart_stickers = CartSticker.objects.filter(cart=cart)
+    return render(request, 'cart.html', {'cart_stickers': cart_stickers})
+
+@login_required(login_url='login')
+def increase_cart_item(request, pk):
+    sticker = Sticker.objects.get(pk=pk)
+    cart = request.user.cart
+    cart_sticker, created = CartSticker.objects.get_or_create(cart=cart, sticker=sticker)
+
+    cart_sticker.quantity += 1
+    cart_sticker.save()
+
+    return redirect('cart')
+
+@login_required(login_url='login')
+def decrease_cart_item(request, pk):
+    sticker = Sticker.objects.get(pk=pk)
+    cart = request.user.cart
+    cart_sticker = cart.cartsticker_set.get(sticker=sticker)
+
+    if cart_sticker.quantity > 1:
+        cart_sticker.quantity -= 1
+        cart_sticker.save()
+    else:
+        cart_sticker.delete()
+
+    return redirect('cart')
+
+@login_required(login_url='login')
+def fetch_cart_count(request):
+    cart_count = 0
+    if request.user.is_authenticated:
+        cart = request.user.cart
+        cart_count = CartSticker.objects.filter(cart=cart).count()
+    return JsonResponse({'cart_count': cart_count})
+
+def get_cart_count(request):
+    if request.user.is_authenticated:
+        cart_stickers = CartSticker.objects.filter(cart=request.user.cart)
+        cart_count = cart_stickers.count()
+    else:
+        cart_count = 0
+    return cart_count
+
+class CreateCart(APIView):
+    def get(self, request):
+        context = {}
+        form = CartForm(request.POST, request.FILES)
+        context['form'] = form
+        return render(request, "cart_create.html", context)
+    def post(self, request):
+        form = CartForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+        return redirect('cart_list')
+
+class CartList(APIView):
+    renderer_classes = [TemplateHTMLRenderer]
+    template_name = 'cart_list.html'
+    def get(self, request):
+        queryset = Cart.objects.all()
+        return Response({'carts': queryset})
+
+class CartUpdate(APIView):
+    renderer_classes = [TemplateHTMLRenderer]
+    template_name = 'cart_update.html'
+
+    def get(self, request, pk):
+        cart = get_object_or_404(Cart, id=pk)
+        serializer = CartSerializer(cart)
+        return Response({'serializer': serializer, 'cart': cart})
+
+    def post(self, request, pk):
+        cart = get_object_or_404(Cart, id=pk)
+        serializer = CartSerializer(cart, data=request.data)
+        if not serializer.is_valid():
+            return Response({'serializer': serializer, 'cart': cart})
+        serializer.save()
+        return redirect('cart_list')
+
+class CartDelete(APIView):
+    def get(self, request, pk):
+        cart = get_object_or_404(Cart, pk=pk)
+        return render(request, "cart_delete.html", {'cart': cart})
+    def post(self, request, pk):
+        cart = get_object_or_404(Cart, pk=pk)
+        cart.delete()
+
+        return redirect('cart_list')
+
+class CreateCartSticker(APIView):
+    def get(self, request):
+        context = {}
+        form = CartStickerForm(request.POST, request.FILES)
+        context['form'] = form
+        return render(request, "cartSticker_create.html", context)
+    def post(self, request):
+        form = CartStickerForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+        return redirect('cartSticker_list')
+
+class CartStickerList(APIView):
+    renderer_classes = [TemplateHTMLRenderer]
+    template_name = 'cartSticker_list.html'
+    def get(self, request):
+        queryset = CartSticker.objects.all()
+        return Response({'cartStickers': queryset})
+
+class CartStickerUpdate(APIView):
+    renderer_classes = [TemplateHTMLRenderer]
+    template_name = 'cartSticker_update.html'
+
+    def get(self, request, pk):
+        cartSticker = get_object_or_404(CartSticker, id=pk)
+        serializer = CartStickerSerializer(cartSticker)
+        return Response({'serializer': serializer, 'cartSticker': cartSticker})
+
+    def post(self, request, pk):
+        cartSticker = get_object_or_404(CartSticker, id=pk)
+        serializer = CartStickerSerializer(cartSticker, data=request.data)
+        if not serializer.is_valid():
+            return Response({'serializer': serializer, 'cartSticker': cartSticker})
+        serializer.save()
+        return redirect('cartSticker_list')
+
+class CartStickerDelete(APIView):
+    def get(self, request, pk):
+        cartSticker = get_object_or_404(CartSticker, pk=pk)
+        return render(request, "cartSticker_delete.html", {'cartSticker': cartSticker})
+    def post(self, request, pk):
+        cartSticker = get_object_or_404(CartSticker, pk=pk)
+        cartSticker.delete()
+
+        return redirect('cartSticker_list')
+
 
 
