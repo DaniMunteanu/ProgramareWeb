@@ -3,7 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
-from backend.models import Sticker, Customer
+from backend.models import Sticker
 
 
 class StickerForm(forms.ModelForm):
@@ -23,32 +23,28 @@ class CustomerForm(UserCreationForm):
     password1 = forms.CharField(label='password', widget=forms.PasswordInput)
     password2 = forms.CharField(label='Confirm password', widget=forms.PasswordInput)
 
-    def username_clean(self):
-        username = self.cleaned_data['username'].lower()
-        new = User.objects.filter(username=username)
-        if new.count():
-            raise ValidationError("User Already Exist")
-        return username
 
-    def email_clean(self):
-        email = self.cleaned_data['email'].lower()
-        new = User.objects.filter(email=email)
-        if new.count():
-            raise ValidationError(" Email Already Exist")
-        return email
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'password1', 'password2')
 
-    def clean_password2(self):
-        password1 = self.cleaned_data['password1']
-        password2 = self.cleaned_data['password2']
+    def __init__(self, *args, **kwargs):
+        super(CustomerForm, self).__init__(*args, **kwargs)
 
-        if password1 and password2 and password1 != password2:
-            raise ValidationError("Password don't match")
-        return password2
+        self.fields['username'].widget.attrs['class'] = 'form-control'
+        self.fields['username'].widget.attrs['placeholder'] = 'User Name'
+        self.fields['username'].label = ''
+        self.fields[
+            'username'].help_text = '<span class="form-text text-muted"><small>Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.</small></span>'
 
-    def save(self, commit=True):
-        user = User.objects.create_user(
-            self.cleaned_data['username'],
-            self.cleaned_data['email'],
-            self.cleaned_data['password1']
-        )
-        return user
+        self.fields['password1'].widget.attrs['class'] = 'form-control'
+        self.fields['password1'].widget.attrs['placeholder'] = 'Password'
+        self.fields['password1'].label = ''
+        self.fields[
+            'password1'].help_text = '<ul class="form-text text-muted small"><li>Your password can\'t be too similar to your other personal information.</li><li>Your password must contain at least 8 characters.</li><li>Your password can\'t be a commonly used password.</li><li>Your password can\'t be entirely numeric.</li></ul>'
+
+        self.fields['password2'].widget.attrs['class'] = 'form-control'
+        self.fields['password2'].widget.attrs['placeholder'] = 'Confirm Password'
+        self.fields['password2'].label = ''
+        self.fields[
+            'password2'].help_text = '<span class="form-text text-muted"><small>Enter the same password as before, for verification.</small></span>'

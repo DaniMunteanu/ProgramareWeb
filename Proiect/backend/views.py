@@ -1,5 +1,6 @@
 from django.contrib import messages
-from django.contrib.auth import logout
+from django.contrib.auth import logout, authenticate, login
+import json
 from django.http import Http404, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from rest_framework import status
@@ -13,23 +14,7 @@ from backend.models import *
 from backend.serializers import StickerSerializer
 
 # Create your views here.
-"""
-class StickerList(APIView):
-"""
-   # List all snippets, or create a new snippet.
-"""
-    def get(self, request, format=None):
-        snippets = Sticker.objects.all()
-        serializer = StickerSerializer(snippets, many=True)
-        return Response(serializer.data)
 
-    def post(self, request, format=None):
-        serializer = StickerSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-"""
 class CreateSticker(APIView):
     def get(self, request):
         context = {}
@@ -76,43 +61,121 @@ class StickerDelete(APIView):
         return redirect('sticker_list')
 
 def register(request):
-    if request.POST == 'POST':
-        form = CustomerForm()
+    form = CustomerForm()
+    if request.method == 'POST':
+        form = CustomerForm(request.POST)
         if form.is_valid():
             form.save()
-            redirect('store')
+            username = form.cleaned_data['username']
+            password = form.cleaned_data['password1']
+            user = authenticate(username=username, password=password)
+            login(request, user)
+            messages.success(request, ("You have registered!"))
+            return redirect('store')
+        else:
+            messages.success(request, ("There was an error during registration!"))
+            return redirect('register')
     else:
-        form = CustomerForm()
-    context = {
-        'form': form
-    }
-    return render(request, 'register.html', context)
+        return render(request, 'register.html', {'form':form})
+
+class UserList(APIView):
+    renderer_classes = [TemplateHTMLRenderer]
+    template_name = 'user_list.html'
+    def get(self, request):
+        queryset = User.objects.all()
+        return Response({'users': queryset})
+
+class UserDelete(APIView):
+    def get(self, request, pk):
+        user = get_object_or_404(User, pk=pk)
+        return render(request, "user_delete.html", {'user': user})
+    def post(self, request, pk):
+        user = get_object_or_404(User, pk=pk)
+        user.delete()
+        return redirect('user_list')
 
 def login_user(request):
-    return render(request, 'login.html', {})
+    if request.method == "POST":
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            messages.success(request, ("You have been logged in!"))
+            return redirect('store')
+        else:
+            return redirect('login')
+    else:
+        return render(request, 'login.html', {})
+
 def logout_user(request):
     logout(request)
-    messages.succes(request, ("You have been logged out!"))
+    messages.success(request, ("You have been logged out!"))
     return redirect('store')
 
 def store_view(request):
+    if request.user.is_authenticated:
+        customer = request.user
+        order, created = Order.objects.get_or_create(user=customer, complete=False)
+        stickers = order.ordersticker_set.all()
+        cartStickers = order.get_cart_stickers
+    else:
+        stickers = []
+        order = {'get_cart_total': 0, 'get_cart_stickers': 0}
+        cartStickers = order['get_cart_items']
+
+
     stickers = Sticker.objects.all()
-    context = {'stickers': stickers}
+    context = {'stickers': stickers, 'cartStickers': cartStickers}
     return render(request, "store.html", context)
 
 def cart_view(request):
     if request.user.is_authenticated:
         customer = request.user
-        order, created = Order.objects.get_or_create(customer=customer, complete=False)
-        items = order.orderitem_set.all()
+        order, created = Order.objects.get_or_create(user=customer, complete=False)
+        stickers = order.ordersticker_set.all()
+        cartStickers = order.get_cart_stickers
     else:
-        items = []
-    context = {'items': items}
+        stickers = []
+        order = {'get_cart_total': 0, 'get_cart_stickers': 0}
+        cartStickers = order['get_cart_items']
+
+    context = {'stickers': stickers, 'order': order}
     return render(request, "cart.html", context)
 
 def checkout_view(request):
+    '''
+    if request.user.is_authenticated:
+        customer = request.user
+        order, created = Order.objects.get_or_create(user=customer, complete=False)
+    '''
+
+
     context = {}
     return render(request, "checkout.html", context)
 
-def updateSticker(request):
+def update_cart(request):
+    data = json.loads(request.body)
+    stickerId = data['stickerId']
+    action = data['action']
+    print('Action:', action)
+    print('Sticker:', stickerId)
+
+    customer = request.user
+    sticker = Sticker.objects.get(id=stickerId)
+    order, created = Order.objects.get_or_create(user=customer, complete=False)
+    orderSticker, created = Order.objects.get_or_create(order=order, sticker=sticker)
+
+    if action == 'add':
+        orderSticker.quantity = (orderSticker.quantity + 1)
+    elif action == 'remove':
+        orderSticker.quantity = (orderSticker.quantity - 1)
+
+    orderSticker.save()
+
+    if orderSticker.quantity <= 0:
+        orderSticker.delete()
+
     return JsonResponse('Sticker was added', safe=False)
+
+

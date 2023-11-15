@@ -6,21 +6,21 @@ for(i=0; i<updateBtns.length; i++)
     {
         var stickerId = this.dataset.sticker
         var action = this.dataset.action
-        console.Log('stickerId:', stickerId, 'action:', action)
+        console.log('stickerId:', stickerId, 'action:', action)
 
-        console.Log('USER:', user)
-        if(user == 'AnonymousUser')
-            console.Log('User is not authenticated')
+        console.log('USER:', user)
+        if(user === 'AnonymousUser')
+            console.log('User is not authenticated')
         else
             updateUserOrder(stickerId, action)
     }
     )
 }
 
-function updateUserOrder(productId, action){
-    console.Log('User is authenticated, sending data...')
+function updateUserOrder(stickerId, action){
+    console.log('User is authenticated, sending data...')
 
-    var url = '/update_sticker/'
+    var url = '/update_cart/'
 
     fetch(url, {
         method:'POST',
@@ -36,6 +36,7 @@ function updateUserOrder(productId, action){
     })
 
     .then((data) => {
+        console.log('data:', data)
         location.reload()
     })
 
